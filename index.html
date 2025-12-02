@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polling Video Terbaik</title>
+    <title>Polling Video Terbaik (Google Auth)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
@@ -23,8 +23,6 @@
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.7), 0 0 15px rgba(255, 215, 0, 0.5);
             border: 4px solid #FFD700;
         }
-
-        /* Animasi Pulse untuk feedback LIKE */
         @keyframes pulse-once {
             0% { transform: scale(1); }
             50% { transform: scale(1.15); opacity: 0.9; }
@@ -33,11 +31,9 @@
         .like-pulse {
             animation: pulse-once 0.3s ease-out;
         }
-        
         .heart-icon {
-            transition: all 0.2s; /* Transisi warna dan ukuran ikon */
+            transition: all 0.2s;
         }
-        /* Custom disabled style for select */
         select:disabled {
             background-color: #f3f4f6;
             cursor: not-allowed;
@@ -50,18 +46,19 @@
     <div id="app" class="max-w-6xl mx-auto">
         <header class="text-center mb-10 p-6 bg-white rounded-xl shadow-lg">
             <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Polling Video Terbaik 🏆</h1>
-            <p class="text-xl text-gray-600">Pilih video favoritmu! Satu nama, email, & peran **terverifikasi** hanya dapat memberikan satu like.</p>
+            <p class="text-xl text-gray-600">Pilih video favoritmu! Setiap akun Google yang terverifikasi hanya dapat memberikan satu like.</p>
             <div id="user-info-display" class="mt-4 text-sm text-gray-500">
                 </div>
             <div id="app-id-display" class="mt-1 text-xs text-gray-400">
                 </div>
         </header>
+        
+        <div id="message-box" class="fixed top-5 right-5 p-4 rounded-lg shadow-xl text-white transition-opacity duration-300 opacity-0 pointer-events-none z-50"></div>
 
-        <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="role-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
             <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all scale-95">
-                <h2 class="text-2xl font-bold mb-4 text-gray-800">Verifikasi Diri Anda (Login untuk Voting)</h2>
-                <p class="mb-6 text-gray-600">Anda harus memilih peran (Siswa/Guru) dan memasukkan Email & Nama. Data ini memastikan 1 identitas hanya 1 suara.</p>
-                <input type="text" id="voter-name" placeholder="Nama Lengkap" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">Lengkapi Profil Anda (Hanya Sekali)</h2>
+                <p class="mb-6 text-gray-600">Kami sudah mendapatkan Nama & Email Anda dari Google. Mohon lengkapi peran Anda untuk voting.</p>
                 
                 <select id="voter-role" onchange="handleRoleChange()" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
                     <option value="">-- Pilih Peran Anda --</option>
@@ -69,13 +66,13 @@
                     <option value="Guru">Guru</option>
                 </select>
 
-                <select id="voter-grade" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <select id="voter-grade" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white" disabled>
                     <option value="">-- Pilih Tingkat Kelas --</option>
                     <option value="X">Kelas X</option>
                     <option value="XI">Kelas XI</option>
                 </select>
 
-                <select id="voter-major" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <select id="voter-major" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white" disabled>
                     <option value="">-- Pilih Jurusan --</option>
                     <option value="DTB">DTB</option>
                     <option value="TSM">TSM</option>
@@ -90,15 +87,11 @@
                     <option value="BD">BD</option>
                 </select>
 
-                <input type="email" id="voter-email" placeholder="Alamat Email (Wajib)" class="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                <button onclick="submitVoterInfo()" id="submit-voter-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50">
-                    Verifikasi dan Mulai Voting
+                <button onclick="submitRoleInfo()" id="submit-role-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50">
+                    Simpan dan Mulai Voting
                 </button>
             </div>
         </div>
-        
-        <div id="message-box" class="fixed top-5 right-5 p-4 rounded-lg shadow-xl text-white transition-opacity duration-300 opacity-0 pointer-events-none z-50"></div>
-
 
         <div id="video-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             </div>
@@ -106,20 +99,21 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
-            getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, arrayUnion, arrayRemove, setLogLevel, 
-            increment // <-- FIXED: Tambahkan increment untuk update counter yang aman
+            getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, setLogLevel, 
+            increment 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Variables provided by the environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         // ====================================================================
-        // KONFIGURASI FIREBASE ANDA (DIAMBIL DARI JAWABAN SEBELUMNYA)
+        // KONFIGURASI FIREBASE ANDA (PASTIKAN KUNCI API AKTIF)
         // ====================================================================
         const githubFirebaseConfig = {
-             apiKey: "AIzaSyAuf_coM6BxA2k1zEIRYYLjbMsb3CuTYBM", 
+             // Pastikan Kunci API ini VALID dan Google Sign-In sudah diaktifkan di konsol Firebase
+             apiKey: "AIzaSyAuf_coM6BxA2k1zElRYYLjbMsb3CuTYBM", 
              authDomain: "polling-a4ec5.firebaseapp.com", 
              projectId: "polling-a4ec5", 
              storageBucket: "polling-a4ec5.appspot.com", 
@@ -127,67 +121,23 @@
              appId: "1:203299918012:web:a46e4820bd1e3618d740b9" 
         };
         
-        // PENTING: Gunakan konfigurasi Canvas jika ada, atau gunakan konfigurasi GitHub yang sudah diisi
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : JSON.stringify(githubFirebaseConfig));
-        
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider(); // Inisialisasi Google Provider
         
-        // Use Debug logging for development
         setLogLevel('Debug');
 
         // State variables
         let userId = null;
         let userData = null; // { name: '...', email: '...', voterRole: '...', voterClass: '...' }
+        let currentFirebaseUser = null; // Objek user dari Google Auth
         
         // ====================================================================
-        // Fungsi utilitas untuk memproses link video dan thumbnail
-        // ====================================================================
-
-        /**
-         * Mengestrak ID YouTube dari berbagai format URL dan mengembalikannya dalam format embed.
-         * @param {string} urlOrId - URL YouTube, link embed, atau ID video.
-         * @returns {string} Link embed YouTube yang valid.
-         */
-        function getYoutubeEmbedUrl(urlOrId) {
-            let id = urlOrId;
-            const embedPrefix = "https://www.youtube.com/embed/";
-
-            // Cek jika ini URL tontonan standar
-            const watchMatch = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/))([^&?]+)/i);
-            if (watchMatch && watchMatch[1]) {
-                id = watchMatch[1];
-            }
-            
-            // Cek jika ini sudah link embed
-            if (urlOrId.startsWith(embedPrefix)) {
-                return urlOrId;
-            }
-            
-            return `${embedPrefix}${id}`;
-        }
-        
-        /**
-         * Mendapatkan URL thumbnail kualitas tinggi dari ID video YouTube.
-         * @param {string} urlOrId - URL YouTube, link embed, atau ID video.
-         * @returns {string} Link thumbnail.
-         */
-        function getYoutubeThumbnailUrl(urlOrId) {
-            let id = urlOrId;
-            const watchMatch = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/))([^&?]+)/i);
-            if (watchMatch && watchMatch[1]) {
-                id = watchMatch[1];
-            }
-            return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
-        }
-        
-        // ====================================================================
-        // START EDIT DI SINI UNTUK MEMASUKKAN DATA VIDEO BARU ANDA
-        // Gunakan ID video YouTube atau link penuh. Kode akan mengkonversinya.
+        // DATA VIDEO
         // ====================================================================
         
         let videos = [
@@ -196,7 +146,7 @@
                 title: 'Perjalanan ke Himalaya (Contoh Video 1)', 
                 creator: 'Tim Petualang', 
                 likes: 0, 
-                videoId: 'g8J18uB69sA' // Cukup masukkan ID video
+                videoId: 'g8J18uB69sA' 
             },
             { 
                 id: 'video_dua', 
@@ -212,7 +162,6 @@
                 likes: 0, 
                 videoId: '5qap5aO4i9A'
             },
-            // Tambahkan video baru di sini, gunakan videoId: 'ID_VIDEO_YOUTUBE'
         ];
         
         // Tambahkan properti url dan thumbnail secara dinamis
@@ -222,37 +171,43 @@
             thumbnail: getYoutubeThumbnailUrl(v.videoId)
         }));
         
-        // ====================================================================
-        // END EDIT DI SINI. JANGAN UBAH KODE DI BAWAH INI.
-        // ====================================================================
-
         let userVote = null; // Stores the video ID the user has voted for
 
         // DOM elements
-        const authModal = document.getElementById('auth-modal');
+        const roleModal = document.getElementById('role-modal'); // Ganti dari auth-modal
         const messageBox = document.getElementById('message-box');
         const videoListContainer = document.getElementById('video-list-container');
         const userInfoDisplay = document.getElementById('user-info-display');
         const appIdDisplay = document.getElementById('app-id-display');
 
-        // Konstanta untuk Exponential Backoff
+        // Konstanta
         const MAX_RETRIES = 3;
         const INITIAL_BACKOFF_MS = 1000;
 
         // --- Utility Functions ---
 
-        /**
-         * Fungsi penundaan berbasis Promise.
-         * @param {number} ms - Milidetik untuk menunda.
-         */
         const delay = ms => new Promise(res => setTimeout(res, ms));
 
+        function getYoutubeEmbedUrl(urlOrId) {
+            let id = urlOrId;
+            const watchMatch = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/))([^&?]+)/i);
+            if (watchMatch && watchMatch[1]) {
+                id = watchMatch[1];
+            }
+            const embedPrefix = "https://www.youtube.com/embed/";
+            if (urlOrId.startsWith(embedPrefix)) return urlOrId;
+            return `${embedPrefix}${id}`;
+        }
+        
+        function getYoutubeThumbnailUrl(urlOrId) {
+            let id = urlOrId;
+            const watchMatch = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/))([^&?]+)/i);
+            if (watchMatch && watchMatch[1]) {
+                id = watchMatch[1];
+            }
+            return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+        }
 
-        /**
-         * Menampilkan pesan notifikasi sementara.
-         * @param {string} message - Pesan yang akan ditampilkan.
-         * @param {string} type - Tipe pesan ('success', 'error', 'info').
-         */
         function showMessage(message, type = 'info') {
             messageBox.textContent = message;
             messageBox.classList.remove('opacity-0', 'pointer-events-none', 'bg-red-500', 'bg-green-500', 'bg-blue-500');
@@ -272,21 +227,13 @@
             }, 3000);
         }
 
-        /**
-         * Mengubah data video menjadi HTML card.
-         * @param {Object} video - Objek data video.
-         * @param {string|null} winnerId - ID video pemenang saat ini.
-         * @param {string|null} userVoteId - ID video yang telah disukai pengguna.
-         * @returns {string} HTML string.
-         */
         function createVideoCard(video, winnerId, userVoteId) {
             const isWinner = video.id === winnerId;
             const isVoted = video.id === userVoteId;
-            const buttonColor = isVoted ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-600 hover:bg-blue-700';
-            const buttonText = isVoted ? 'SUDAH DI-LIKE' : 'LIKE VIDEO INI';
+            const buttonColor = (isVoted || !userId) ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700';
+            const buttonText = !userId ? 'LOGIN DULU' : (isVoted ? 'SUDAH DI-LIKE' : 'LIKE VIDEO INI');
             const winnerClass = isWinner ? 'winner-glow border-blue-500' : 'border-gray-200';
-            const disabledAttr = isVoted ? 'disabled' : '';
-            // Warna ikon hati: merah jika sudah divoting, abu-abu jika belum
+            const disabledAttr = isVoted || !userId ? 'disabled' : '';
             const heartColorClass = isVoted ? 'text-red-600' : 'text-gray-400';
 
             return `
@@ -304,6 +251,7 @@
                         <div>
                             <h2 class="text-xl font-bold text-gray-800">${video.title}</h2>
                             <p class="text-sm text-gray-500 mb-4">Oleh: ${video.creator}</p>
+                            ${isWinner ? '<span class="text-xs font-bold text-yellow-600">PEMENANG SEMENTARA</span>' : ''}
                         </div>
                         ${isWinner ? '<span class="text-3xl" title="Pemenang Sementara">👑</span>' : ''}
                     </div>
@@ -326,13 +274,7 @@
             `;
         }
 
-        /**
-         * Render ulang daftar video
-         * @param {Array<Object>} currentVideos - Daftar video terbaru.
-         * @param {string|null} userVoteId - ID video yang telah disukai pengguna.
-         */
         function renderVideos(currentVideos, userVoteId) {
-            // Tentukan pemenang (video dengan likes terbanyak)
             const winner = currentVideos.reduce((prev, current) => {
                 return (prev.likes > current.likes) ? prev : current;
             }, { likes: -1, id: null });
@@ -343,21 +285,51 @@
             ).join('');
         }
 
-        // --- Firebase/Auth Functions ---
+        /**
+         * Render informasi pengguna atau tombol Login/Logout
+         */
+        function renderUserInfo() {
+            if (currentFirebaseUser && userData) {
+                // Tampilkan info pengguna dan tombol Logout
+                userInfoDisplay.innerHTML = `
+                    Anda masuk sebagai: <span class="font-semibold text-green-600">${userData.name} (${userData.voterRole} ${userData.voterClass || ''})</span>
+                    <button onclick="handleLogout()" class="ml-4 text-sm bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md transition duration-150">
+                        Logout
+                    </button>
+                `;
+            } else if (currentFirebaseUser && !userData) {
+                // Pengguna login Google tapi belum mengisi data peran
+                 userInfoDisplay.innerHTML = `
+                    Halo, <span class="font-semibold text-orange-600">${currentFirebaseUser.displayName || currentFirebaseUser.email}</span>. Mohon lengkapi profil Anda.
+                    <button onclick="handleLogout()" class="ml-4 text-sm bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md transition duration-150">
+                        Logout
+                    </button>
+                `;
+            } else {
+                // Tampilkan tombol Login
+                userInfoDisplay.innerHTML = `
+                    <button onclick="handleGoogleSignIn()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center mx-auto transition duration-200">
+                        <img src="https://img.icons8.com/color/24/000000/google-logo.png" class="w-5 h-5 mr-2" alt="Google">
+                        Login dengan Akun Google
+                    </button>
+                `;
+            }
+            renderVideos(videos, userVote); // Pastikan kartu video dirender ulang untuk mengaktifkan/menonaktifkan tombol like
+        }
+
 
         /**
-         * Menampilkan atau menyembunyikan modal autentikasi
-         * @param {boolean} show - True untuk menampilkan, false untuk menyembunyikan.
+         * Menampilkan atau menyembunyikan modal peran/kelas
          */
-        function toggleAuthModal(show) {
+        function toggleRoleModal(show) {
             if (show) {
-                authModal.classList.remove('opacity-0', 'pointer-events-none');
-                authModal.querySelector('.max-w-md').classList.remove('scale-95');
-                authModal.querySelector('.max-w-md').classList.add('scale-100');
+                roleModal.classList.remove('opacity-0', 'pointer-events-none');
+                roleModal.querySelector('.max-w-md').classList.remove('scale-95');
+                roleModal.querySelector('.max-w-md').classList.add('scale-100');
             } else {
-                authModal.classList.add('opacity-0', 'pointer-events-none');
-                authModal.querySelector('.max-w-md').classList.remove('scale-100');
-                authModal.querySelector('.max-w-md').classList.add('scale-95');
+                roleModal.classList.add('opacity-0', 'pointer-events-none');
+                roleModal.querySelector('.max-w-md').classList.remove('scale-100');
+                roleModal.querySelector('.max-w-md').classList.add('scale-95');
             }
         }
         
@@ -374,68 +346,98 @@
             gradeSelect.disabled = isDisabled;
             majorSelect.disabled = isDisabled;
 
-            // Clear values if disabled
             if (isDisabled) {
                 gradeSelect.value = "";
                 majorSelect.value = "";
             }
         };
 
+        // --- NEW: Google Sign-In Functions ---
 
+        window.handleGoogleSignIn = async function() {
+            try {
+                // Gunakan signInWithRedirect untuk pengalaman yang lebih baik di mobile
+                // Untuk contoh ini, kita gunakan Popup
+                await signInWithPopup(auth, googleProvider);
+                // Auth state listener akan menangani sisa proses
+            } catch (error) {
+                console.error("Google Sign-In failed:", error);
+                showMessage('Gagal Login dengan Google. Pastikan Google Sign-In sudah diaktifkan di Firebase Console.', 'error');
+            }
+        };
+
+        window.handleLogout = async function() {
+            try {
+                await signOut(auth);
+                showMessage('Anda telah keluar. Silakan login untuk voting lagi.', 'info');
+                // onAuthStateChanged akan mereset state
+            } catch (error) {
+                console.error("Logout failed:", error);
+                showMessage('Gagal Logout.', 'error');
+            }
+        };
+        
         /**
-         * Mendapatkan atau membuat data pengguna (nama, peran, kelas, & email) di Firestore.
+         * Mendapatkan atau membuat data pengguna (peran, kelas, & jurusan) di Firestore.
          */
-        async function fetchOrCreateUserData() {
+        async function fetchOrCreateUserData(user) {
+            currentFirebaseUser = user;
+            userId = user.uid;
+            
             const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'voters', userId);
             
             for (let i = 0; i < MAX_RETRIES; i++) {
                 try {
                     const userDocSnap = await getDoc(userDocRef);
                     if (userDocSnap.exists()) {
+                        // Data voter sudah lengkap
                         userData = userDocSnap.data();
                         userVote = userData.votedFor || null;
-                        userInfoDisplay.innerHTML = `Anda masuk sebagai: <span class="font-semibold text-green-600">${userData.name} (${userData.voterRole} ${userData.voterClass || ''})</span>`;
-                        showMessage(`Selamat datang kembali, ${userData.name} (${userData.voterRole})! Anda sudah terverifikasi.`, 'success');
-                        toggleAuthModal(false);
+                        
+                        // Setelah data pengguna dimuat/dibuat, mulai mendengarkan perubahan video
+                        setupRealtimeListener();
+                        renderUserInfo();
+                        toggleRoleModal(false);
                     } else {
-                        // Jika data belum ada, kita perlu meminta verifikasi
-                        userInfoDisplay.innerHTML = `Anda masuk (Sesi ID): <span class="font-semibold text-blue-600">${userId.substring(0, 8)}...</span>. <span class="text-red-500 font-bold">Lengkapi Verifikasi Diri untuk Voting.</span>`;
-                        toggleAuthModal(true);
-                        // Atur status awal dropdown saat modal ditampilkan
-                        handleRoleChange(); 
-                        return; // Hentikan proses, tunggu user submit di modal
+                        // Data voter belum ada (pertama kali login)
+                        userData = null;
+                        userVote = null;
+                        
+                        // Tampilkan modal untuk mengisi peran/kelas
+                        handleRoleChange(); // Reset dropdown state
+                        toggleRoleModal(true);
                     }
-                    // Jika berhasil, keluar dari loop retry
-                    break;
+                    return; // Keluar dari fungsi setelah sukses/gagal
                 } catch (error) {
                     console.error(`Percobaan ${i + 1} gagal mengambil data pengguna:`, error);
                     if (i === MAX_RETRIES - 1) {
-                        showMessage('Gagal memuat data pengguna setelah beberapa percobaan. Silakan coba lagi.', 'error');
+                        showMessage('Gagal memuat data profil pengguna setelah beberapa percobaan.', 'error');
                         return;
                     }
                     const backoffTime = INITIAL_BACKOFF_MS * Math.pow(2, i);
                     await delay(backoffTime);
                 }
             }
-            
-            // Setelah data pengguna dimuat/dibuat, mulai mendengarkan perubahan video
-            setupRealtimeListener();
         }
 
         /**
-         * Dipanggil saat pengguna memasukkan Nama, Peran, Kelas, Jurusan, dan Email.
+         * Dipanggil saat pengguna memasukkan Peran, Kelas, dan Jurusan.
+         * Hanya dijalankan setelah Google Sign-In sukses.
          */
-        window.submitVoterInfo = async function() {
-            const submitBtn = document.getElementById('submit-voter-btn');
+        window.submitRoleInfo = async function() {
+            if (!currentFirebaseUser) {
+                showMessage('Autentikasi tidak valid. Silakan coba login ulang.', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-role-btn');
             
-            const nameInput = document.getElementById('voter-name').value.trim();
             const roleInput = document.getElementById('voter-role').value.trim(); // Peran: Siswa/Guru
             const gradeInput = document.getElementById('voter-grade').value.trim();
             const majorInput = document.getElementById('voter-major').value.trim();
-            const emailInput = document.getElementById('voter-email').value.trim();
             
-            if (!nameInput || !emailInput || roleInput === "") { 
-                showMessage('Nama, Email, dan Peran tidak boleh kosong.', 'error');
+            if (roleInput === "") { 
+                showMessage('Peran (Siswa/Guru) wajib dipilih.', 'error');
                 return;
             }
 
@@ -445,104 +447,53 @@
                 return;
             }
             
-            if (!emailInput.includes('@') || !emailInput.includes('.')) {
-                showMessage('Format email tidak valid. Harap masukkan email yang benar.', 'error');
-                return;
-            }
-            
-            // Tentukan Class/ID Kelompok untuk unikness
             let classIdentifier;
             if (roleInput === 'Siswa') {
-                // Siswa menggunakan kombinasi Kelas-Jurusan: Contoh X-RPL
                 classIdentifier = `${gradeInput}-${majorInput}`;
             } else {
-                // Guru menggunakan peran sebagai identifier kelas: Contoh Guru
                 classIdentifier = roleInput; 
             }
             
-            // Hash untuk pencarian cepat dan validasi unik: Nama | Email | ClassIdentifier
-            const nameEmailClassHash = nameInput.toLowerCase() + '|' + emailInput.toLowerCase() + '|' + classIdentifier.toLowerCase();
-
-            // Cek apakah kombinasi ini sudah terdaftar di Firestore
-            const votersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'voters');
-            
-            // Query untuk mencari pengguna dengan hash kombinasi yang sama
-            const q = query(votersCollectionRef, 
-                where('name_email_hash', '==', nameEmailClassHash)
-            );
-            
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Memproses Verifikasi...';
+            submitBtn.textContent = 'Menyimpan Profil...';
             
             try {
-                for (let i = 0; i < MAX_RETRIES; i++) {
-                    try {
-                        const querySnapshot = await getDocs(q);
-                        let existingUser = null;
+                // Simpan data pengguna baru di Firestore menggunakan UID Google yang permanen
+                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'voters', userId);
+                userData = {
+                    name: currentFirebaseUser.displayName || 'Anonim',
+                    email: currentFirebaseUser.email || 'Email Tidak Ada',
+                    voterRole: roleInput,
+                    voterClass: classIdentifier, // X-RPL atau Guru
+                    voterGrade: roleInput === 'Siswa' ? gradeInput : null,
+                    voterMajor: roleInput === 'Siswa' ? majorInput : null,
+                    votedFor: null,
+                };
+                
+                await setDoc(userDocRef, userData);
 
-                        querySnapshot.forEach(doc => {
-                            if (doc.id !== userId) {
-                                existingUser = doc.data();
-                            }
-                        });
+                showMessage('Profil berhasil dilengkapi! Silakan berikan like Anda.', 'success');
+                toggleRoleModal(false);
+                
+                // Mulai mendengarkan perubahan video setelah autentikasi
+                setupRealtimeListener();
+                renderUserInfo();
 
-                        if (existingUser) {
-                            showMessage('Identitas (Nama, Email, Peran/Kelas) ini sudah terdaftar. Silakan gunakan kombinasi yang berbeda atau refresh halaman.', 'error');
-                            return;
-                        }
-
-                        // Jika unik, simpan data pengguna baru di Firestore
-                        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'voters', userId);
-                        userData = {
-                            name: nameInput,
-                            email: emailInput,
-                            voterRole: roleInput,
-                            voterClass: classIdentifier, // X-RPL atau Guru
-                            voterGrade: roleInput === 'Siswa' ? gradeInput : null,
-                            voterMajor: roleInput === 'Siswa' ? majorInput : null,
-                            votedFor: null,
-                            // Hash untuk pencarian cepat dan validasi unik (Kunci Login)
-                            name_email_hash: nameEmailClassHash 
-                        };
-                        
-                        await setDoc(userDocRef, userData);
-
-                        userInfoDisplay.innerHTML = `Anda masuk sebagai: <span class="font-semibold text-green-600">${userData.name} (${userData.voterRole} ${userData.voterClass || ''})</span>`;
-                        showMessage('Verifikasi berhasil! Silakan berikan like Anda.', 'success');
-                        toggleAuthModal(false);
-                        
-                        // Mulai mendengarkan perubahan video setelah autentikasi
-                        setupRealtimeListener();
-                        
-                        // Jika berhasil, keluar dari loop retry
-                        break;
-
-                    } catch (error) {
-                        console.error(`Percobaan ${i + 1} gagal submit info voter:`, error);
-                        if (i === MAX_RETRIES - 1) {
-                            throw error; // Lempar error jika semua percobaan gagal
-                        }
-                        const backoffTime = INITIAL_BACKOFF_MS * Math.pow(2, i);
-                        await delay(backoffTime);
-                    }
-                }
             } catch (error) {
-                console.error("Fatal Error submitting voter info:", error);
-                showMessage('Gagal menyimpan data voter setelah beberapa percobaan. Error: ' + error.message, 'error');
+                console.error("Fatal Error submitting role info:", error);
+                showMessage('Gagal menyimpan profil. Error: ' + error.message, 'error');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Verifikasi dan Mulai Voting';
+                submitBtn.textContent = 'Simpan dan Mulai Voting';
             }
         };
         
         /**
          * Proses like/unlike video.
-         * @param {string} videoId - ID video yang di-like.
          */
         window.handleLike = async function(videoId) {
             if (!userId || !userData) {
-                showMessage('Anda harus memverifikasi Identitas (Peran, Nama, Email) Anda terlebih dahulu.', 'error');
-                toggleAuthModal(true);
+                showMessage('Anda harus login dengan Google dan melengkapi profil terlebih dahulu.', 'error');
                 return;
             }
             if (userVote) {
@@ -553,7 +504,6 @@
             // 1. Update Dokumen Video (Tambah Like) - MENGGUNAKAN INCREMENT
             const videoRef = doc(db, 'artifacts', appId, 'public', 'data', 'videos', videoId);
             try {
-                // Menggunakan increment(1) untuk memastikan atomic update di server
                 await updateDoc(videoRef, {
                     likes: increment(1) 
                 });
@@ -575,7 +525,6 @@
                 const heartElement = document.getElementById(`heart-${videoId}`);
                 
                 if (heartElement) {
-                    // Beri warna merah dan picu animasi pulse
                     heartElement.classList.remove('text-gray-400');
                     heartElement.classList.add('text-red-600', 'like-pulse');
                     setTimeout(() => {
@@ -585,6 +534,7 @@
                 
                 // Render ulang untuk menonaktifkan semua tombol vote
                 renderVideos(videos, userVote); 
+                renderUserInfo(); // Perbarui status tombol
 
                 showMessage('Like berhasil direkam! Terima kasih atas partisipasi Anda.', 'success');
             } catch (error) {
@@ -603,21 +553,29 @@
                 try {
                     const docSnap = await getDoc(videoDocRef);
                     if (!docSnap.exists()) {
-                        // Hanya set data jika belum ada, agar likes yang sudah ada tidak tertimpa
                         await setDoc(videoDocRef, { 
                             id: video.id,
                             title: video.title,
                             creator: video.creator,
                             url: video.url,
                             thumbnail: video.thumbnail,
-                            likes: video.likes // 0
+                            likes: video.likes
                         });
                         console.log(`Video ${video.id} berhasil diinisialisasi.`);
+                    } else {
+                         // Pastikan data lokal diperbarui dengan likes dari Firestore
+                        const existingData = docSnap.data();
+                        const index = videos.findIndex(v => v.id === video.id);
+                        if (index !== -1) {
+                            videos[index].likes = existingData.likes || 0;
+                        }
                     }
                 } catch (error) {
-                    console.error(`Gagal inisialisasi video ${video.id}:`, error);
+                    console.error(`Gagal inisialisasi/sinkronisasi video ${video.id}:`, error);
                 }
             }
+             // Initial render based on existing likes
+             renderVideos(videos, userVote);
         }
 
         /**
@@ -626,7 +584,6 @@
         function setupRealtimeListener() {
             const videoCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'videos');
             
-            // Query untuk mendapatkan semua video
             const q = query(videoCollectionRef);
 
             onSnapshot(q, (snapshot) => {
@@ -636,7 +593,6 @@
                     updatedVideos.push(data);
                 });
                 
-                // Urutkan berdasarkan likes (tertinggi di atas)
                 updatedVideos.sort((a, b) => b.likes - a.likes);
                 videos = updatedVideos; // Update state global videos
                 
@@ -650,60 +606,33 @@
 
         // --- Initialization and Auth Flow ---
 
-        /**
-         * Proses utama inisialisasi aplikasi.
-         */
         async function initApp() {
             appIdDisplay.textContent = `App ID: ${appId}`;
             
-            // 1. Autentikasi Perangkat/Sesi
-            const authenticate = async () => {
-                try {
-                    if (initialAuthToken) {
-                        // Jika ada token dari lingkungan Canvas, gunakan itu.
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        // Jika di luar Canvas (GitHub Pages), gunakan Anonymous Sign-in.
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase Authentication failed:", error);
-                    showMessage('Gagal autentikasi Firebase. Cek koneksi Anda dan pastikan konfigurasi sudah benar.', 'error');
-                    return false; // Gagal autentikasi
+            // 1. Inisialisasi video (dijalankan terpisah dari auth, untuk menampilkan counter)
+            await initializeVideos();
+            
+            // 2. Listener Auth State (Menangani proses Login/Logout)
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // User berhasil login (Google)
+                    await fetchOrCreateUserData(user);
+                } else {
+                    // User logout atau belum login
+                    userId = null;
+                    userData = null;
+                    userVote = null;
+                    currentFirebaseUser = null;
+                    // Hentikan listener jika user logout (opsional)
+                    // setupRealtimeListener(); 
+                    renderUserInfo();
+                    toggleRoleModal(false);
                 }
-                return true; // Berhasil autentikasi
-            };
-            
-            const isAuthenticated = await authenticate();
-
-            // 2. Listener Auth State (Hanya jika Autentikasi berhasil)
-            if (isAuthenticated) {
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        
-                        // Inisialisasi video
-                        await initializeVideos();
-                        
-                        // Lanjutkan ke pengambilan data voter
-                        await fetchOrCreateUserData();
-                        
-                    } else {
-                        userId = null;
-                        userData = null;
-                        userVote = null;
-                        userInfoDisplay.textContent = 'Menunggu autentikasi...';
-                    }
-                });
-            }
-            
-            // Render initial view (sebelum data dimuat)
-            renderVideos(videos, userVote);
+            });
         }
 
         // Start the application
         window.onload = initApp;
     </script>
 </body>
-
 </html>
